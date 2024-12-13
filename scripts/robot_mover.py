@@ -4,7 +4,9 @@ import rospy
 import intera_interface
 import time
 import math
+import numpy as np
 
+from scipy.spatial.transform import Rotation
 from intera_motion_msgs.msg import TrajectoryOptions
 from geometry_msgs.msg import PoseStamped
 from intera_motion_interface import (
@@ -95,6 +97,7 @@ def limb_neutral_pos():
 	limb.move_to_neutral(speed=0.2)
 	
 def limb_max_extention():
+	# joint 7 wrist correction 0.1496263401595 rad
 	print('[DEBUG] ==> limb_max_extention')
 	robot_params = intera_interface.RobotParams()
 	limb_names = robot_params.get_limb_names()
@@ -128,7 +131,10 @@ def set_joint_angels(angles):
 	idx = 0
 	for name in joint_names:
 		if len(angles) > idx and angles[idx] is not None:
-			joint_angles[name] = angles[idx]
+			if idx == 6:
+				joint_angles[name] = angles[idx]+0.1496263401595
+			else:
+				joint_angles[name] = angles[idx]
 		idx += 1
 	print(joint_angles)
 	# move to meximum arme extentation
@@ -162,25 +168,48 @@ def gripper_controle(action:str):
 	if action == 'close':
 		gripper.close()
 	
-def display_end_pos():
+def display_end_pos(location:str):
 	print('[DEBUG] ==> display_end_pos')
 	robot_params = intera_interface.RobotParams()
 	limb_names = robot_params.get_limb_names()
 	limb = intera_interface.Limb(limb=limb_names[0])
-	endpoint_state = limb.tip_state('right_hand')
+	endpoint_state = limb.tip_state(location)
 	print(f'[DEBUG] endpoint state pose: {endpoint_state.pose}')
+	
+def get_camera_pos(pose):
+	print('[DEBUG] ==> get_camera_pos')
+	robot_params = intera_interface.RobotParams()
+	limb_names = robot_params.get_limb_names()
+	limb = intera_interface.Limb(limb=limb_names[0])
+	endpoint_state = limb.tip_state('right_hand')
+	pos = endpoint_state.pose.position
+	ori = endpoint_state.pose.orientation
+	rotation = np.array([
+		[1-2*(ori.y**2+ori.z**2), 2*(ori.x*ori.y - ori.z*ori.w), 2*(ori.x*ori.z + ori.y*ori.w)],
+		[2*(ori.x*ori.y + ori.z*ori.w), 1-2*(ori.x**2 + ori.z**2), 2*(ori.y*ori.z - ori.x*ori.w)],
+		[2*(ori.x*ori.z - ori.y*ori.w), 2*(ori.y*ori.z + ori.x*ori.w), 1-2*(ori.x**2 + ori.y**2)]
+	])
+	camera_offset = [0, -0.04, -0.095]
+	camera_pos = [pos.x, pos.y, pos.z] + (rotation.dot(camera_offset))
+	print(camera_pos)
+
 
 
 def main():
 	rospy.init_node('robot_mover')
 	pos = [0.8820733750820632, 0.1578053773120996, 0.31494917536003253]
 	ori = [0.5401057038144683, 0.0000000000, 0.5428952585441672, -0.454491558906238]
-	joint_angles = [-0.0017305944756964664, -0.00010714471693596971, 0.037955441591930435, -0.019549573823439508, -0.04093183928579047, 1.5824264201324811, -0.000494495177923493]
-	display_end_pos()
+	joint_angles = [0.5087085829639281, -0.08149781881027884, -1.7015814213923333, 1.8267033091670497, 1.4599682727745886, 0.05688630809279016, 0.16212491375904292]
+	#1.75-0.01704329251994
+	#joint_angles = [0, 0, 0, 0, 0, 0, 2*math.pi/4]
+	#display_end_pos('right_hand')
 	print("-------------------------------------------------")
-	limb_neutral_pos()
+	#limb_neutral_pos()
 	#limb_max_extention()
-	set_joint_angels(joint_angles)
+	pose = set_joint_angels(joint_angles)
+	get_camera_pos(pose)
+	#time.sleep(5)
+	display_end_pos('right_hand')
 	#rospy.spin()
 		
 
