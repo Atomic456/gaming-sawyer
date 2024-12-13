@@ -66,7 +66,7 @@ def ik_service_client(pos:List[float], ori:List[float], tip_name:str) -> bool:
 		limb_joints = dict(list(zip(resp.joints[0].name, resp.joints[0].position)))
 		rospy.loginfo("\nIK Joint Solution:\n%s", limb_joints)
 		rospy.loginfo("------------------")
-		rospy.loginfo("Response Message:\n%s", resp)
+		#rospy.loginfo("Response Message:\n%s", limb_joints["right_j0"])
 	else:
 		rospy.logerr("INVALID POSE - No Valid Joint Solution Found.")
 		rospy.logerr("Result Error %d", resp.result_type[0])
@@ -76,8 +76,8 @@ def ik_service_client(pos:List[float], ori:List[float], tip_name:str) -> bool:
 
 def main():
 	rospy.init_node("rsdk_ik_service_client")
-	pos = [0.8823970358775916, 0.15828035764230267, 0.18079174237566487]
-	ori = [0.7659923239667895, -0.6428418763319106, 0.0031286275807636565, 0.0005416156269654382]
+	pos = [0.5629056497, -0.06954376171, 0.5626770017178021]
+	ori = [0.08786237202672356, -0.6845447811485493, 0.7192894605021544, -0.07938084274334335]
 	if ik_service_client(pos, ori, "right_hand"):
 		rospy.loginfo("Simple IK call passed!")
 	else:
