@@ -151,24 +151,21 @@ def calc_offset(img_h, img_w, item_center):
 	return dx, dy
 	
 def angles2quaterion(roll_x, pitch_y, yaw_z):
-	roll = np.radians(roll_x)
-	pitch = np.radians(pitch_y)
+	roll = np.radians(roll_x) 
+	pitch = np.radians(pitch_y) 
 	yaw = np.radians(yaw_z)
-	print(roll, pitch, yaw)
 	
-	cos_r = np.cos(roll / 2)
-	sin_r = np.sin(roll / 2)
-	
-	cos_p = np.cos(pitch / 2)
-	sin_p = np.sin(pitch / 2)
-	
-	cos_y = np.cos(yaw / 2)
+	cos_r = np.cos(roll / 2) 
+	sin_r = np.sin(roll / 2) 
+	cos_p = np.cos(pitch / 2) 
+	sin_p = np.sin(pitch / 2) 
+	cos_y = np.cos(yaw / 2) 
 	sin_y = np.sin(yaw / 2)
 	
-	qw = (cos_r * cos_p * cos_y) + (sin_r * sin_p * sin_y)
-	qx = (sin_r * cos_p * cos_y) - (cos_r * sin_p * sin_y)
-	qy = (cos_r * sin_p * cos_y) + (sin_r * cos_p * sin_y)
-	qz = (cos_r * cos_p * sin_y) - (sin_r * sin_p * cos_y)
+	qw = cos_r * cos_p * cos_y + sin_r * sin_p * sin_y 
+	qx = sin_r * cos_p * cos_y - cos_r * sin_p * sin_y 
+	qy = cos_r * sin_p * cos_y + sin_r * cos_p * sin_y 
+	qz = cos_r * cos_p * sin_y - sin_r * sin_p * cos_y
 	
 	return np.array([qx, qy, qz, qw])
 	
