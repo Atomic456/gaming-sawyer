@@ -110,7 +110,10 @@ def limb_max_extention():
 	joint_angles = {}
 	# set all joint angels to zero
 	for name in joint_names:
-		joint_angles[name] = 0.0
+		if name == 'right_j6':
+			joint_angles[name] = 0.0 + 0.1496263401595
+		else:
+			joint_angles[name] = 0.0
 	print(joint_angles)
 	time.sleep(0.2)
 	# move to meximum arme extentation
@@ -137,9 +140,8 @@ def set_joint_angels(angles):
 				joint_angles[name] = angles[idx]
 		idx += 1
 	print(joint_angles)
-	# move to meximum arme extentation
+	
 	res = limb.move_to_joint_positions(joint_angles)
-	print(res)
 
 def gripper_init():
 	print('[DEBUG] ==> gripper_init')
@@ -176,7 +178,7 @@ def display_end_pos(location:str):
 	endpoint_state = limb.tip_state(location)
 	print(f'[DEBUG] endpoint state pose: {endpoint_state.pose}')
 	
-def get_camera_pos(pose):
+def get_camera_pos():
 	print('[DEBUG] ==> get_camera_pos')
 	robot_params = intera_interface.RobotParams()
 	limb_names = robot_params.get_limb_names()
@@ -184,15 +186,58 @@ def get_camera_pos(pose):
 	endpoint_state = limb.tip_state('right_hand')
 	pos = endpoint_state.pose.position
 	ori = endpoint_state.pose.orientation
-	rotation = np.array([
-		[1-2*(ori.y**2+ori.z**2), 2*(ori.x*ori.y - ori.z*ori.w), 2*(ori.x*ori.z + ori.y*ori.w)],
-		[2*(ori.x*ori.y + ori.z*ori.w), 1-2*(ori.x**2 + ori.z**2), 2*(ori.y*ori.z - ori.x*ori.w)],
-		[2*(ori.x*ori.z - ori.y*ori.w), 2*(ori.y*ori.z + ori.x*ori.w), 1-2*(ori.x**2 + ori.y**2)]
+	rotation_gripper = quaternion2matrix(ori.x, ori.y, ori.z, ori.w)
+	rotation_x_90 = np.array([
+		[1, 0, 0],
+		[0, 0, -1],
+		[0, 1, 0]
 	])
-	camera_offset = [0, -0.04, -0.095]
-	camera_pos = [pos.x, pos.y, pos.z] + (rotation.dot(camera_offset))
+	rotation_camera = np.dot(rotation_y_90,rotation_gripper)
+	camera_offset = [0.04, 0, -0.095]
+	camera_pos = [pos.x, pos.y, pos.z] + (rotation_gripper.dot(camera_offset))
 	print(camera_pos)
+	print(matrix2quaternion(rotation_camera))
+	
+def quaternion2matrix(x, y, z, w):
+	return np.array([
+		[1-2*(y**2+z**2), 2*(x*y - z*w), 2*(x*z + y*w)],
+		[2*(x*y + z*w), 1-2*(x**2 + z**2), 2*(y*z - x*w)],
+		[2*(x*z - y*w), 2*(y*z + x*w), 1-2*(x**2 + y**2)]
+	])
+	
 
+def matrix2quaternion(r):
+	quaternion = np.empty((4, ))
+	# sum of diagonal values
+	trace = np.trace(r)
+	
+	if trace > 0:
+		s = np.sqrt(trace+1.0)*2
+		w = 0.25 * s
+		x = (r[2,1] - r[1,2])/s
+		y = (r[0,2] - r[2,0])/s
+		z = (r[1,0] - r[0,1])/s
+	else:
+		if (r[0,0] > r[1,1]) and (r[0,0] > r[2,2]):
+			s = 2.0 * np.sqrt(1.0+ r[0,0]-r[1,1]-r[2,2])
+			w = (r[2,1] - r[1,2])/s
+			x = 0.25 * s 
+			y = (r[0,1] + r[1,0])/s
+			z = (r[0,2] + r[2,0])/s
+		elif r[1,1] > r[2,2]:
+			s = 2.0 * np.sqrt(1.0+ r[1,1]-r[0,0]-r[2,2])
+			w = (r[0,2] - r[2,0])/s
+			x = (r[0,1] + r[1,0])/s
+			y = 0.25 * s
+			z = (r[1,2] + r[2,1])/s
+		else:
+			s = 2.0 * np.sqrt(1.0+ r[2,2]-r[0,0]-r[1,1])
+			w = (r[1,0] - r[0,1])/s
+			x = (r[0,2] + r[2,0])/s
+			y = (r[1,2] + r[2,1])/s
+			z = 0.25 * s
+	
+	return x, y, z, w
 
 
 def main():
@@ -201,13 +246,15 @@ def main():
 	ori = [0.5401057038144683, 0.0000000000, 0.5428952585441672, -0.454491558906238]
 	joint_angles = [0.5087085829639281, -0.08149781881027884, -1.7015814213923333, 1.8267033091670497, 1.4599682727745886, 0.05688630809279016, 0.16212491375904292]
 	#1.75-0.01704329251994
-	#joint_angles = [0, 0, 0, 0, 0, 0, 2*math.pi/4]
+	#gripper_init()
+	#gripper_controle('open')
+	#joint_angles = [0, 0, 0, 0, 0, 0, 0]
 	#display_end_pos('right_hand')
 	print("-------------------------------------------------")
 	#limb_neutral_pos()
 	#limb_max_extention()
-	pose = set_joint_angels(joint_angles)
-	get_camera_pos(pose)
+	#set_joint_angels(joint_angles)
+	get_camera_pos()
 	#time.sleep(5)
 	display_end_pos('right_hand')
 	#rospy.spin()
@@ -218,3 +265,4 @@ if __name__ == '__main__':
 		main()
 	except rospy.ROSInterruptException:
 		pass
+

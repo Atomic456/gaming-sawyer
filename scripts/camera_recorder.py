@@ -15,6 +15,8 @@
 
 import argparse
 import numpy as np
+import intera_interface
+
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -38,17 +40,26 @@ def image_callback(msg):
         # Save your OpenCV2 image as a jpeg
         cv2.imshow("image", cv2_img)
         cv2.waitKey(3)
-        if images_taken < 16:
-        	cv2.imwrite('../images/calibration/img'+str(images_taken)+'.png', cv2_img)
+        #if images_taken < 16:
+        	#cv2.imwrite('../images/calibration/img'+str(images_taken)+'.png', cv2_img)
         images_taken = images_taken + 1
+
+def clean_shutdown():
+	print("Shutting down camera_display node.")
+	cv2.destroyAllWindows()
 
 def main():
     rospy.init_node('image_listener')
+    cameras = intera_interface.Cameras()
+    cameras.start_streaming('right_hand_camera')
+    cameras.set_gain('right_hand_camera', 2)
+    cameras.set_exposure('right_hand_camera', 14)
     # Define your image topic
     image_topic = "/io/internal_camera/right_hand_camera/image_raw"
     # Set up your subscriber and define its callback
     rospy.Subscriber(image_topic, Image, image_callback)
     # Spin until ctrl + c
+    rospy.on_shutdown(clean_shutdown)    
     rospy.spin()
 
 
