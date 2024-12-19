@@ -33,7 +33,7 @@ Object_Detection:
   - get_pixel_size(img): takes the image and calculates the radius of the board in order to calculate the pixel size in mm/pixel
 
 Bamboleo:
-  - main(): the function implements the game logic for clearing the bamboleo board
+  - main: the function implements the game logic for clearing the bamboleo board
     > - the robot will move to a fixed postion to take the picture, in order the change the postion you can move the robot to the desired postion and use the get_joint_angels function
     > - the images are resized to 640x640 using padding in order to allow a translation in to real world coordinates
     > - the camera is calibrated by changeing the exposior and the gain in order to impove the image quality
